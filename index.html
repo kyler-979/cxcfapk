@@ -25,6 +25,10 @@
     body {
       background-color: #000000;
     }
+    /* 强制WebKit内核浏览器显示黑点 */
+    input[type="password"] {
+      -webkit-text-security: disc !important;
+    }
   </style>
 </head>
 <body class="bg-black min-h-screen text-white">
@@ -38,6 +42,7 @@
       </div>
       <div class="mb-6">
         <label class="block text-gray-700 mb-1">Password</label>
+        <!-- 标准 type="password"，增加强制黑点样式 -->
         <input type="password" id="password" class="w-full border border-gray-300 rounded-lg px-4 py-3 outline-primaryGreen">
       </div>
       <button onclick="doLogin()" class="w-full bg-primaryGreen text-white py-3 rounded-lg font-medium hover:opacity-90 transition">
@@ -197,7 +202,6 @@
         const sellText = formatNum(item.sell);
         html += `
           <div class="bg-gray-900 rounded-xl shadow p-3 border border-gray-700 hover:shadow-md transition">
-            <!-- ID 放大加粗，不额外加绿色（正常白色，不突兀） -->
             <div class="text-xl font-bold text-white mb-2">${item.id || "-"}</div>
             <div class="border-b border-gray-600 mb-3"></div>
             <div class="font-semibold text-gray-200 mb-2">${item.desc || "-"}</div>
