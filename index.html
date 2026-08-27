@@ -33,7 +33,7 @@
     }
   </style>
 </head>
-<!-- 背景改为深灰色（zinc-900），深色但不是纯黑 -->
+<!-- 背景为深灰色（zinc-900），深色但不是纯黑 -->
 <body class="bg-zinc-900 min-h-screen text-white">
   <!-- 登录页面 -->
   <div id="loginPage" class="flex justify-center items-center min-h-screen px-4">
@@ -164,7 +164,7 @@
       showLoginPage();
     }
 
-    // ✅ 修复加载失败：兼容多种后端返回格式，不强制校验success字段
+    // 兼容多种后端返回格式，不强制校验success字段
     async function loadProducts(){
       try{
         const userInfo = JSON.parse(localStorage.getItem("userInfo"));
