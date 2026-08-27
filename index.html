@@ -22,7 +22,7 @@
       -webkit-tap-highlight-color: transparent;
       box-sizing: border-box;
     }
-    /* 强制密码框显示黑点掩码，兼容各端webview */
+    /* 强制密码框显示黑点，兼容各端WebView */
     input[type="password"] {
       -webkit-text-security: disc !important;
       text-security: disc;
@@ -33,7 +33,7 @@
     }
   </style>
 </head>
-<!-- 背景为深灰色（zinc-900），深色但不是纯黑 -->
+<!-- 背景改为深灰色，深色但不是纯黑 -->
 <body class="bg-zinc-900 min-h-screen text-white">
   <!-- 登录页面 -->
   <div id="loginPage" class="flex justify-center items-center min-h-screen px-4">
@@ -141,7 +141,7 @@
           body:JSON.stringify({action:"login", username:user, password:pwd})
         })
         const data = await res.json();
-        // 兼容登录返回格式：true / {success:true}
+        // 兼容老登录返回格式：true / {success:true}
         const ok = data === true || data.success === true;
         if(ok){
           localStorage.setItem("userInfo", JSON.stringify({username:user}));
@@ -164,7 +164,7 @@
       showLoginPage();
     }
 
-    // 兼容多种后端返回格式，不强制校验success字段
+    // ✅ 核心修复：兼容多种后端返回格式，不强制校验success字段
     async function loadProducts(){
       try{
         const userInfo = JSON.parse(localStorage.getItem("userInfo"));
