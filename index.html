@@ -46,21 +46,21 @@
       <p id="loginTip" class="mt-3 text-primaryRed text-center hidden"></p>
     </div>
   </div>
-
   <!-- 产品管理主页 -->
   <div id="mainPage" class="hidden p-4 max-w-6xl mx-auto">
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex justify-between items-center mb-4 gap-2">
       <h1 class="text-xl font-bold text-primaryGreen">Product List</h1>
-      <button onclick="logout()" class="bg-primaryRed text-white px-4 py-2 rounded-lg">Logout</button>
+      <div class="flex gap-2">
+        <button onclick="loadProducts()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Refresh</button>
+        <button onclick="logout()" class="bg-primaryRed text-white px-4 py-2 rounded-lg">Logout</button>
+      </div>
     </div>
-
     <!-- 🔍 搜索框 -->
     <div class="mb-4">
       <input type="text" id="searchInput" placeholder="Search by ID / Description / Size..." 
         class="w-full border border-gray-600 bg-gray-900 text-white rounded-lg px-4 py-3 outline-primaryGreen" oninput="renderProductCards()">
     </div>
-
-    <!-- ➕ 添加产品（默认收起，Group / Sell 左右并排） -->
+    <!-- ➕ 添加产品 -->
     <div class="mb-6">
       <button id="toggleAddBtn" onclick="toggleAddForm()" class="w-full bg-primaryGreen text-white py-3 rounded-lg font-medium">
         + Add New Product
@@ -77,15 +77,15 @@
         </div>
       </div>
     </div>
-
-    <!-- 📦 产品卡片容器：手机2列 -->
+    <!-- 📦 产品卡片 -->
     <div id="productList" class="grid grid-cols-2 gap-3">
+      <div class="col-span-full text-center py-8 text-gray-400">Ready</div>
     </div>
     <p id="globalTip" class="mt-4 text-center hidden"></p>
   </div>
-
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKFq9Ww1S7LEI5J4BAiJmLBhhb2SsqWIBNyqPgGoWHGo5a-M9-TrJB16FOBBCbBm0W9A/exec";
+    // ⚠️ 替换成你新部署后的WebApp链接
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwiL3hJ1_875VJ01rMUpjSaQmNq8ErZ-SHgUlt8E04znL3z4r9QljsCVlU5ZfJKF1-BRA/exec";
     let productData = [];
 
     window.onload = () => {
@@ -94,7 +94,6 @@
         loadProducts();
       }
     }
-
     function showMainPage(){
       document.getElementById("loginPage").classList.add("hidden");
       document.getElementById("mainPage").classList.remove("hidden");
@@ -110,12 +109,28 @@
       el.classList.remove("hidden");
       setTimeout(()=> el.classList.add("hidden"),2500);
     }
-
     function toggleAddForm(){
       const wrap = document.getElementById("addFormWrap");
       const btn = document.getElementById("toggleAddBtn");
       wrap.classList.toggle("hidden");
       btn.innerText = wrap.classList.contains("hidden") ? "+ Add New Product" : "- Close Add Form";
+    }
+
+    async function apiRequest(payload){
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      const rawText = await res.text();
+      try{
+        return JSON.parse(rawText);
+      }catch(e){
+        console.error("接口返回不是JSON：", rawText);
+        return {success:false, msg:"接口返回数据异常"};
+      }
     }
 
     async function doLogin(){
@@ -129,17 +144,13 @@
         return;
       }
       try{
-        const res = await fetch(SCRIPT_URL, {
-          method:"POST",
-          body:JSON.stringify({action:"login", username:user, password:pwd})
-        })
-        const data = await res.json();
+        const data = await apiRequest({action:"login", username:user, password:pwd});
         if(data.success){
           localStorage.setItem("userInfo", JSON.stringify({username:user}));
           showMainPage();
           loadProducts();
         }else{
-          tipEl.innerText = "Invalid username or password";
+          tipEl.innerText = data.msg || "Invalid username or password";
           tipEl.classList.remove("hidden");
         }
       }catch(err){
@@ -148,33 +159,28 @@
         console.error(err);
       }
     }
-
     function logout(){
       localStorage.removeItem("userInfo");
       productData = [];
       showLoginPage();
     }
-
     async function loadProducts(){
       try{
+        document.getElementById("productList").innerHTML = `<div class="col-span-full text-center py-8 text-gray-400">Loading...</div>`;
         const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-        const res = await fetch(SCRIPT_URL, {
-          method:"POST",
-          body:JSON.stringify({action:"getProducts", username:userInfo.username})
-        })
-        const data = await res.json();
+        const data = await apiRequest({action:"getProducts", username:userInfo.username});
         if(!data.success){
-          logout();
+          showTip("globalTip", data.msg || "Load failed", true);
           return;
         }
         productData = data.products || [];
         renderProductCards();
       }catch(err){
+        document.getElementById("productList").innerHTML = `<div class="col-span-full text-center py-8 text-red-400">Load Error</div>`;
         showTip("globalTip", "Failed to load product list", true);
         console.error(err);
       }
     }
-
     function renderProductCards(){
       const keyword = document.getElementById("searchInput").value.toLowerCase().trim();
       const container = document.getElementById("productList");
@@ -197,7 +203,6 @@
         const sellText = formatNum(item.sell);
         html += `
           <div class="bg-gray-900 rounded-xl shadow p-3 border border-gray-700 hover:shadow-md transition">
-            <!-- ID 放大加粗，不额外加绿色（正常白色，不突兀） -->
             <div class="text-xl font-bold text-white mb-2">${item.id || "-"}</div>
             <div class="border-b border-gray-600 mb-3"></div>
             <div class="font-semibold text-gray-200 mb-2">${item.desc || "-"}</div>
@@ -209,7 +214,6 @@
       })
       container.innerHTML = html;
     }
-
     async function addProduct(){
       const desc = document.getElementById("prodDesc").value.trim();
       const size = document.getElementById("prodSize").value.trim();
@@ -221,22 +225,23 @@
       }
       try{
         const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-        await fetch(SCRIPT_URL, {
-          method:"POST",
-          body:JSON.stringify({
-            action:"addProduct",
-            username:userInfo.username,
-            desc,size,group,sell
-          })
+        const data = await apiRequest({
+          action:"addProduct",
+          username:userInfo.username,
+          desc,size,group,sell
         })
-        document.getElementById("prodDesc").value = "";
-        document.getElementById("prodSize").value = "";
-        document.getElementById("prodGroup").value = "";
-        document.getElementById("prodSell").value = "";
-        document.getElementById("addFormWrap").classList.add("hidden");
-        document.getElementById("toggleAddBtn").innerText = "+ Add New Product";
-        showTip("globalTip", "Product added successfully");
-        loadProducts();
+        if(data.success){
+          document.getElementById("prodDesc").value = "";
+          document.getElementById("prodSize").value = "";
+          document.getElementById("prodGroup").value = "";
+          document.getElementById("prodSell").value = "";
+          document.getElementById("addFormWrap").classList.add("hidden");
+          document.getElementById("toggleAddBtn").innerText = "+ Add New Product";
+          showTip("globalTip", "Product added successfully");
+          loadProducts();
+        }else{
+          showTip("globalTip", data.msg || "Add product failed", true);
+        }
       }catch(err){
         showTip("globalTip", "Add product failed", true);
         console.error(err);
