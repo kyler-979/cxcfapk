@@ -25,12 +25,6 @@
     body {
       background-color: #f7f7f7;
     }
-
-    /* 强制密码框显示黑点 */
-    input[type="password"] {
-      -webkit-text-security: disc !important;
-      text-security: disc;
-    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen text-gray-900">
@@ -62,7 +56,7 @@
 
     <!-- 搜索框 -->
     <div class="mb-4">
-      <input type="text" id="searchInput" placeholder="Search by ID / Description / Size..." 
+      <input type="text" id="searchInput" placeholder="Search by ID / Description / Size..."
         class="w-full border border-gray-300 bg-white text-gray-900 rounded-lg px-4 py-3 outline-primaryGreen" oninput="renderProductCards()">
     </div>
 
@@ -91,7 +85,8 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzqv3Wf0mrUfG6RyvHpHY7vbeOdKJA2JRw6PjvwhSm3oWvyQC2Ur45KLL7OozwnjL1I9A/exec";
+    // ============这里已经替换成你新的exec链接============
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNrTfpbog2_syZAOtzJ_PbsVxo5HhfGgYNadr_TJIljcjivk1x8xncJjDzVxtf-Z5Y2Q/exec";
     let productData = [];
 
     window.onload = () => {
@@ -144,8 +139,7 @@
           body:JSON.stringify({action:"login", username:user, password:pwd})
         })
         const data = await res.json();
-
-        if(data.success){
+        if(data.success === true){
           localStorage.setItem("userInfo", JSON.stringify({username:user}));
           showMainPage();
           loadProducts();
@@ -174,13 +168,12 @@
           body:JSON.stringify({action:"getProducts", username:userInfo.username})
         })
         const data = await res.json();
-
-        if(!data.success){
+        if(data.success === true && Array.isArray(data.products)){
+          productData = data.products;
+        }else{
           logout();
           return;
         }
-
-        productData = data.products || [];
         renderProductCards();
       }catch(err){
         showTip("globalTip", "Failed to load product list", true);
@@ -241,8 +234,7 @@
 
       try{
         const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-
-        await fetch(SCRIPT_URL, {
+        const res = await fetch(SCRIPT_URL, {
           method:"POST",
           body:JSON.stringify({
             action:"addProduct",
@@ -250,17 +242,20 @@
             desc,size,group,sell
           })
         })
+        const data = await res.json();
+        if(data.ok === true){
+          document.getElementById("prodDesc").value = "";
+          document.getElementById("prodSize").value = "";
+          document.getElementById("prodGroup").value = "";
+          document.getElementById("prodSell").value = "";
 
-        document.getElementById("prodDesc").value = "";
-        document.getElementById("prodSize").value = "";
-        document.getElementById("prodGroup").value = "";
-        document.getElementById("prodSell").value = "";
-
-        document.getElementById("addFormWrap").classList.add("hidden");
-        document.getElementById("toggleAddBtn").innerText = "+ Add New Product";
-
-        showTip("globalTip", "Product added successfully");
-        loadProducts();
+          document.getElementById("addFormWrap").classList.add("hidden");
+          document.getElementById("toggleAddBtn").innerText = "+ Add New Product";
+          showTip("globalTip", "Product added successfully");
+          loadProducts();
+        }else{
+          showTip("globalTip", "Add product failed", true);
+        }
       }catch(err){
         showTip("globalTip", "Add product failed", true);
         console.error(err);
@@ -269,4 +264,3 @@
   </script>
 </body>
 </html>
-
