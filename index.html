@@ -17,7 +17,7 @@
             padding: 16px;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         .hidden {
@@ -30,57 +30,98 @@
             margin-bottom: 20px;
         }
         h1 {
-            font-size: 22px;
+            font-size: 24px;
+            font-weight: 600;
         }
         button {
-            background: #004400;
+            background: #003300;
             color: #39ff14;
             border: 1px solid #39ff14;
-            padding: 8px 14px;
-            border-radius: 4px;
+            padding: 9px 16px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            transition: 0.2s;
         }
         button:hover {
             background: #006600;
         }
-        .login-box, .add-form-box {
+        .login-box {
             border: 1px solid #39ff14;
-            padding: 20px;
-            border-radius: 6px;
-            margin-bottom: 20px;
+            padding: 24px;
+            border-radius: 8px;
+            max-width: 420px;
+            margin: 60px auto 0;
+        }
+        .login-box h2 {
+            margin-bottom: 16px;
+            text-align: center;
         }
         input {
             width: 100%;
             background: #111;
             border: 1px solid #39ff14;
             color: #39ff14;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 4px;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 15px;
         }
         .search-area {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
+        .search-area input {
+            max-width: 600px;
+        }
+        /* 手机强制双列布局 */
         .product-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 14px;
         }
+        @media (min-width: 768px) {
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                gap: 18px;
+            }
+        }
         .product-card {
-            border: 1px solid #39ff14;
-            padding: 14px;
-            border-radius: 6px;
+            border: 1px solid #227722;
+            background: #080808;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #00330055;
+            transition: 0.25s;
         }
-        .product-card p {
-            margin: 6px 0;
-            font-size: 14px;
+        .product-card:hover {
+            box-shadow: 0 0 16px #00550080;
+            border-color: #39ff14;
         }
-        .del-btn {
-            margin-top:8px;
-            background:#440000;
-            border-color:#ff4444;
-            color:#ff4444;
+        .product-card .pid {
+            font-size: 20px;
+            font-weight: bold;
+            word-break: break-all;
+        }
+        .divider {
+            height: 1px;
+            background-color: #227722;
+            margin: 10px 0;
+        }
+        .product-card .desc {
+            font-size:16px;
+            font-weight:bold;
+            margin-bottom:8px;
+        }
+        .product-card .size {
+            font-size:14px;
+            color:#99ee99;
+            margin-bottom:12px;
+        }
+        .price-row {
+            display:flex;
+            justify-content: space-between;
+            font-size:15px;
+            margin:6px 0;
         }
         .debug-popup {
             position: fixed;
@@ -89,7 +130,7 @@
             background:#111;
             border:1px solid #39ff14;
             padding:12px;
-            max-width:320px;
+            max-width:340px;
             z-index:999;
             font-size:12px;
         }
@@ -103,7 +144,7 @@
             <h2>Login</h2>
             <input type="text" id="username" placeholder="Username">
             <input type="password" id="password" placeholder="Password">
-            <button onclick="doLogin()">Login</button>
+            <button onclick="doLogin()" style="width:100%">Login</button>
         </div>
     </div>
 
@@ -118,16 +159,7 @@
         </div>
 
         <div class="search-area">
-            <input type="text" id="searchInput" placeholder="Search by ID / Desc / Size" oninput="filterProducts()">
-        </div>
-
-        <div class="add-form-box">
-            <h3>Add New Product</h3>
-            <input type="text" id="descInput" placeholder="Description">
-            <input type="text" id="sizeInput" placeholder="Size">
-            <input type="number" step="0.01" id="groupInput" placeholder="Group Price (RM)">
-            <input type="number" step="0.01" id="sellInput" placeholder="Sell Price (RM)">
-            <button onclick="addProduct()">Submit New Product</button>
+            <input type="text" id="searchInput" placeholder="Search by ID / Description / Size" oninput="filterProducts()">
         </div>
 
         <div class="product-grid" id="productGrid"></div>
@@ -142,7 +174,6 @@
     // ====================================================================
     let rawProductList = [];
 
-    // Init check local login
     window.onload = function(){
         const savedUser = localStorage.getItem("invUser");
         const savedPass = localStorage.getItem("invPass");
@@ -229,74 +260,15 @@
             const card = document.createElement("div");
             card.className = "product-card";
             card.innerHTML = `
-                <p><strong>ID:</strong> ${p.id}</p>
-                <p><strong>Desc:</strong> ${p.desc}</p>
-                <p><strong>Size:</strong> ${p.size}</p>
-                <p><strong>Group:</strong> RM ${Number(p.group).toFixed(2)}</p>
-                <p><strong>Sell:</strong> RM ${Number(p.sell).toFixed(2)}</p>
-                <button class="del-btn" onclick="deleteProduct('${p.id}')">Delete</button>
+                <div class="pid">${p.id}</div>
+                <div class="divider"></div>
+                <div class="desc">${p.desc}</div>
+                <div class="size">Size: ${p.size}</div>
+                <div class="price-row"><span>Group Price</span><span>RM ${Number(p.group).toFixed(2)}</span></div>
+                <div class="price-row"><span>Sell Price</span><span>RM ${Number(p.sell).toFixed(2)}</span></div>
             `
             grid.appendChild(card);
         })
-    }
-
-    async function addProduct(){
-        const desc = document.getElementById("descInput").value.trim();
-        const size = document.getElementById("sizeInput").value.trim();
-        const group = parseFloat(document.getElementById("groupInput").value);
-        const sell = parseFloat(document.getElementById("sellInput").value);
-        if(!desc || isNaN(group) || isNaN(sell)){
-            alert("Fill all required fields correctly");
-            return;
-        }
-        debugLog("Adding new product");
-        try{
-            const res = await fetch(WEB_APP_URL,{
-                method:"POST",
-                body:JSON.stringify({
-                    action:"addProduct",
-                    desc:desc,
-                    size:size,
-                    group:group,
-                    sell:sell
-                })
-            })
-            const data = await res.json();
-            if(data.success){
-                alert("Added OK");
-                // clear form
-                document.getElementById("descInput").value="";
-                document.getElementById("sizeInput").value="";
-                document.getElementById("groupInput").value="";
-                document.getElementById("sellInput").value="";
-                loadProducts();
-            }else{
-                alert("Add fail: "+data.msg);
-                debugLog("Add fail: "+data.msg);
-            }
-        }catch(e){
-            debugLog("Add error: "+e.message);
-        }
-    }
-
-    async function deleteProduct(pid){
-        if(!confirm("Delete this product?")) return;
-        debugLog("Deleting "+pid);
-        try{
-            const res = await fetch(WEB_APP_URL,{
-                method:"POST",
-                body:JSON.stringify({action:"deleteProduct", id:pid})
-            })
-            const data = await res.json();
-            if(data.success){
-                alert("Deleted");
-                loadProducts();
-            }else{
-                alert("Delete fail: "+data.msg);
-            }
-        }catch(e){
-            debugLog("Delete error: "+e.message);
-        }
     }
 </script>
 </body>
