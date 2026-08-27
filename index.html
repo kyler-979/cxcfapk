@@ -23,11 +23,11 @@
       box-sizing: border-box;
     }
     body {
-      background-color: #f7f7f7;
+      background-color: #000000;
     }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-900">
+<body class="bg-black min-h-screen text-white">
   <!-- 登录页面 -->
   <div id="loginPage" class="flex justify-center items-center min-h-screen px-4">
     <div class="w-full max-w-md border-2 border-primaryGreen rounded-xl p-6 shadow-lg bg-white">
@@ -54,39 +54,38 @@
       <button onclick="logout()" class="bg-primaryRed text-white px-4 py-2 rounded-lg">Logout</button>
     </div>
 
-    <!-- 搜索框 -->
+    <!-- 🔍 搜索框 -->
     <div class="mb-4">
-      <input type="text" id="searchInput" placeholder="Search by ID / Description / Size..."
-        class="w-full border border-gray-300 bg-white text-gray-900 rounded-lg px-4 py-3 outline-primaryGreen" oninput="renderProductCards()">
+      <input type="text" id="searchInput" placeholder="Search by ID / Description / Size..." 
+        class="w-full border border-gray-600 bg-gray-900 text-white rounded-lg px-4 py-3 outline-primaryGreen" oninput="renderProductCards()">
     </div>
 
-    <!-- 添加产品 -->
+    <!-- ➕ 添加产品（默认收起，Group / Sell 左右并排） -->
     <div class="mb-6">
       <button id="toggleAddBtn" onclick="toggleAddForm()" class="w-full bg-primaryGreen text-white py-3 rounded-lg font-medium">
         + Add New Product
       </button>
-      <div id="addFormWrap" class="hidden mt-3 p-4 bg-white rounded-xl shadow border border-gray-200">
+      <div id="addFormWrap" class="hidden mt-3 p-4 bg-gray-900 rounded-xl shadow border border-gray-700">
         <div class="grid gap-3">
-          <input type="text" id="prodDesc" placeholder="Description" class="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2">
-          <input type="text" id="prodSize" placeholder="Size" class="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2">
+          <input type="text" id="prodDesc" placeholder="Description" class="border border-gray-600 bg-gray-800 text-white rounded-lg px-3 py-2">
+          <input type="text" id="prodSize" placeholder="Size" class="border border-gray-600 bg-gray-800 text-white rounded-lg px-3 py-2">
           <div class="grid grid-cols-2 gap-3">
-            <input type="number" step="0.01" id="prodGroup" placeholder="Group" class="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2">
-            <input type="number" step="0.01" id="prodSell" placeholder="Sell" class="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2">
+            <input type="number" step="0.01" id="prodGroup" placeholder="Group" class="border border-gray-600 bg-gray-800 text-white rounded-lg px-3 py-2">
+            <input type="number" step="0.01" id="prodSell" placeholder="Sell" class="border border-gray-600 bg-gray-800 text-white rounded-lg px-3 py-2">
           </div>
           <button onclick="addProduct()" class="bg-primaryGreen text-white py-2 rounded-lg">Save Product</button>
         </div>
       </div>
     </div>
 
-    <!-- 产品卡片容器：手机2列 -->
+    <!-- 📦 产品卡片容器：手机2列 -->
     <div id="productList" class="grid grid-cols-2 gap-3">
     </div>
     <p id="globalTip" class="mt-4 text-center hidden"></p>
   </div>
 
   <script>
-    // ============这里已经替换成你新的exec链接============
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNrTfpbog2_syZAOtzJ_PbsVxo5HhfGgYNadr_TJIljcjivk1x8xncJjDzVxtf-Z5Y2Q/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzqv3Wf0mrUfG6RyvHpHY7vbeOdKJA2JRw6PjvwhSm3oWvyQC2Ur45KLL7OozwnjL1I9A/exec";
     let productData = [];
 
     window.onload = () => {
@@ -100,12 +99,10 @@
       document.getElementById("loginPage").classList.add("hidden");
       document.getElementById("mainPage").classList.remove("hidden");
     }
-
     function showLoginPage(){
       document.getElementById("loginPage").classList.remove("hidden");
       document.getElementById("mainPage").classList.add("hidden");
     }
-
     function showTip(elId, text, isError=false){
       const el = document.getElementById(elId);
       el.innerText = text;
@@ -126,20 +123,18 @@
       const pwd = document.getElementById("password").value.trim();
       const tipEl = document.getElementById("loginTip");
       tipEl.classList.add("hidden");
-
       if(!user || !pwd){
         tipEl.innerText = "Please fill username and password";
         tipEl.classList.remove("hidden");
         return;
       }
-
       try{
         const res = await fetch(SCRIPT_URL, {
           method:"POST",
           body:JSON.stringify({action:"login", username:user, password:pwd})
         })
         const data = await res.json();
-        if(data.success === true){
+        if(data.success){
           localStorage.setItem("userInfo", JSON.stringify({username:user}));
           showMainPage();
           loadProducts();
@@ -168,12 +163,11 @@
           body:JSON.stringify({action:"getProducts", username:userInfo.username})
         })
         const data = await res.json();
-        if(data.success === true && Array.isArray(data.products)){
-          productData = data.products;
-        }else{
+        if(!data.success){
           logout();
           return;
         }
+        productData = data.products || [];
         renderProductCards();
       }catch(err){
         showTip("globalTip", "Failed to load product list", true);
@@ -184,40 +178,35 @@
     function renderProductCards(){
       const keyword = document.getElementById("searchInput").value.toLowerCase().trim();
       const container = document.getElementById("productList");
-
       const filterList = productData.filter(item=>{
         return (item.id||"").toLowerCase().includes(keyword)
           || (item.desc||"").toLowerCase().includes(keyword)
           || (item.size||"").toLowerCase().includes(keyword);
       })
-
       if(filterList.length ===0){
         container.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400">No matching products</div>`;
         return;
       }
-
       let html = "";
       filterList.forEach(item=>{
         const formatNum = (val) => {
           const num = parseFloat(val || 0);
           return "RM" + num.toFixed(2);
         }
-
         const groupText = formatNum(item.group);
         const sellText = formatNum(item.sell);
-
         html += `
-          <div class="bg-white rounded-xl shadow p-3 border border-gray-200 hover:shadow-md transition">
-            <div class="text-xl font-bold text-gray-900 mb-2">${item.id || "-"}</div>
-            <div class="border-b border-gray-300 mb-3"></div>
-            <div class="font-semibold text-gray-800 mb-2">${item.desc || "-"}</div>
-            <div class="text-sm text-gray-600 mb-1">Size: ${item.size || "-"}</div>
-            <div class="text-sm text-gray-600 mb-1">Group: ${groupText}</div>
-            <div class="text-sm text-gray-600">Sell: ${sellText}</div>
+          <div class="bg-gray-900 rounded-xl shadow p-3 border border-gray-700 hover:shadow-md transition">
+            <!-- ID 放大加粗，不额外加绿色（正常白色，不突兀） -->
+            <div class="text-xl font-bold text-white mb-2">${item.id || "-"}</div>
+            <div class="border-b border-gray-600 mb-3"></div>
+            <div class="font-semibold text-gray-200 mb-2">${item.desc || "-"}</div>
+            <div class="text-sm text-gray-400 mb-1">Size: ${item.size || "-"}</div>
+            <div class="text-sm text-gray-400 mb-1">Group: ${groupText}</div>
+            <div class="text-sm text-gray-400">Sell: ${sellText}</div>
           </div>
         `
       })
-
       container.innerHTML = html;
     }
 
@@ -226,15 +215,13 @@
       const size = document.getElementById("prodSize").value.trim();
       const group = document.getElementById("prodGroup").value.trim();
       const sell = document.getElementById("prodSell").value.trim();
-
       if(!desc){
         showTip("globalTip", "Description cannot be empty", true);
         return;
       }
-
       try{
         const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-        const res = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
           method:"POST",
           body:JSON.stringify({
             action:"addProduct",
@@ -242,20 +229,14 @@
             desc,size,group,sell
           })
         })
-        const data = await res.json();
-        if(data.ok === true){
-          document.getElementById("prodDesc").value = "";
-          document.getElementById("prodSize").value = "";
-          document.getElementById("prodGroup").value = "";
-          document.getElementById("prodSell").value = "";
-
-          document.getElementById("addFormWrap").classList.add("hidden");
-          document.getElementById("toggleAddBtn").innerText = "+ Add New Product";
-          showTip("globalTip", "Product added successfully");
-          loadProducts();
-        }else{
-          showTip("globalTip", "Add product failed", true);
-        }
+        document.getElementById("prodDesc").value = "";
+        document.getElementById("prodSize").value = "";
+        document.getElementById("prodGroup").value = "";
+        document.getElementById("prodSell").value = "";
+        document.getElementById("addFormWrap").classList.add("hidden");
+        document.getElementById("toggleAddBtn").innerText = "+ Add New Product";
+        showTip("globalTip", "Product added successfully");
+        loadProducts();
       }catch(err){
         showTip("globalTip", "Add product failed", true);
         console.error(err);
