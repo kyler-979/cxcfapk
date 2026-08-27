@@ -138,7 +138,7 @@
 
 <script>
     // ========= CONFIG - PASTE YOUR APPS SCRIPT WEB APP URL HERE =========
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzihhzjfJ2QGY5az7ra3H4ByXJonHbqqL_VI1uxd83AMgL7u0fFm849_PnRjc-jXSaJeQ/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzil0jslgcECFRvSJv_Ljjmb81G7fzwHrbOch59TcjjSzhgRsOQGQIIDBeLgTb0yKRB8g/exec";
     // ====================================================================
     let rawProductList = [];
 
@@ -221,9 +221,9 @@
         const grid = document.getElementById("productGrid");
         grid.innerHTML = "";
         const filtered = rawProductList.filter(item=>{
-            return item.id.toLowerCase().includes(keyword)
-                || item.desc.toLowerCase().includes(keyword)
-                || item.size.toLowerCase().includes(keyword);
+            return String(item.id).toLowerCase().includes(keyword)
+                || String(item.desc).toLowerCase().includes(keyword)
+                || String(item.size).toLowerCase().includes(keyword);
         })
         filtered.forEach(p=>{
             const card = document.createElement("div");
