@@ -22,22 +22,19 @@
       -webkit-tap-highlight-color: transparent;
       box-sizing: border-box;
     }
-    body {
-      background-color: #f7f7f7;
-      color: #111;
-    }
-    /* 强制密码黑点，兼容安卓webview */
+    /* 强制密码框显示黑点掩码，兼容各端webview */
     input[type="password"] {
       -webkit-text-security: disc !important;
       text-security: disc;
     }
-    input[type="text"],input[type="password"],input[type="number"]{
-      color:#111 !important;
-      background:#fff !important;
+    input {
+      color: #111 !important;
+      background: #fff !important;
     }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-900">
+<!-- 背景改为深灰色（zinc-900），深色但不是纯黑 -->
+<body class="bg-zinc-900 min-h-screen text-white">
   <!-- 登录页面 -->
   <div id="loginPage" class="flex justify-center items-center min-h-screen px-4">
     <div class="w-full max-w-md border-2 border-primaryGreen rounded-xl p-6 shadow-lg bg-white">
@@ -64,31 +61,31 @@
       <button onclick="logout()" class="bg-primaryRed text-white px-4 py-2 rounded-lg">Logout</button>
     </div>
 
-    <!-- 🔍 搜索框 -->
+    <!-- 搜索框 -->
     <div class="mb-4">
       <input type="text" id="searchInput" placeholder="Search by ID / Description / Size..." 
-        class="w-full border border-gray-300 bg-white text-gray-900 rounded-lg px-4 py-3 outline-primaryGreen" oninput="renderProductCards()">
+        class="w-full border border-zinc-700 bg-zinc-800 text-white rounded-lg px-4 py-3 outline-primaryGreen" oninput="renderProductCards()">
     </div>
 
-    <!-- ➕ 添加产品（默认收起，Group / Sell 左右并排） -->
+    <!-- 添加产品（默认收起，Group / Sell 左右并排） -->
     <div class="mb-6">
       <button id="toggleAddBtn" onclick="toggleAddForm()" class="w-full bg-primaryGreen text-white py-3 rounded-lg font-medium">
         + Add New Product
       </button>
-      <div id="addFormWrap" class="hidden mt-3 p-4 bg-white rounded-xl shadow border border-gray-200">
+      <div id="addFormWrap" class="hidden mt-3 p-4 bg-zinc-800 rounded-xl shadow border border-zinc-700">
         <div class="grid gap-3">
-          <input type="text" id="prodDesc" placeholder="Description" class="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2">
-          <input type="text" id="prodSize" placeholder="Size" class="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2">
+          <input type="text" id="prodDesc" placeholder="Description" class="border border-zinc-600 bg-zinc-700 text-white rounded-lg px-3 py-2">
+          <input type="text" id="prodSize" placeholder="Size" class="border border-zinc-600 bg-zinc-700 text-white rounded-lg px-3 py-2">
           <div class="grid grid-cols-2 gap-3">
-            <input type="number" step="0.01" id="prodGroup" placeholder="Group" class="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2">
-            <input type="number" step="0.01" id="prodSell" placeholder="Sell" class="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2">
+            <input type="number" step="0.01" id="prodGroup" placeholder="Group" class="border border-zinc-600 bg-zinc-700 text-white rounded-lg px-3 py-2">
+            <input type="number" step="0.01" id="prodSell" placeholder="Sell" class="border border-zinc-600 bg-zinc-700 text-white rounded-lg px-3 py-2">
           </div>
           <button onclick="addProduct()" class="bg-primaryGreen text-white py-2 rounded-lg">Save Product</button>
         </div>
       </div>
     </div>
 
-    <!-- 📦 产品卡片容器：手机2列 -->
+    <!-- 产品卡片容器：手机2列 -->
     <div id="productList" class="grid grid-cols-2 gap-3">
     </div>
     <p id="globalTip" class="mt-4 text-center hidden"></p>
@@ -99,18 +96,9 @@
     let productData = [];
 
     window.onload = () => {
-      const raw = localStorage.getItem("userInfo");
-      if(raw){
-        try{
-          JSON.parse(raw);
-          showMainPage();
-          loadProducts();
-        }catch(e){
-          localStorage.removeItem("userInfo");
-          showLoginPage();
-        }
-      }else{
-        showLoginPage();
+      if(localStorage.getItem("userInfo")){
+        showMainPage();
+        loadProducts();
       }
     }
 
@@ -153,9 +141,9 @@
           body:JSON.stringify({action:"login", username:user, password:pwd})
         })
         const data = await res.json();
-        console.log("login resp:", data);
-        //兼容老登录返回
-        if(data.success || data === true){
+        // 兼容登录返回格式：true / {success:true}
+        const ok = data === true || data.success === true;
+        if(ok){
           localStorage.setItem("userInfo", JSON.stringify({username:user}));
           showMainPage();
           loadProducts();
@@ -176,6 +164,7 @@
       showLoginPage();
     }
 
+    // ✅ 修复加载失败：兼容多种后端返回格式，不强制校验success字段
     async function loadProducts(){
       try{
         const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -184,21 +173,22 @@
           body:JSON.stringify({action:"getProducts", username:userInfo.username})
         })
         const data = await res.json();
-        console.log("product raw resp >>>", data); // 关键调试输出！F12看这里
-        // =====兼容两种格式【重点修复】=====
+        
+        // 兼容三种格式：直接数组 / {products:[]} / {success:true, products:[]}
         let list = [];
         if(Array.isArray(data)){
-          //老GS：直接返回数组
           list = data;
         }else if(data.products && Array.isArray(data.products)){
-          //新格式 {success:true,products:[]}
+          list = data.products;
+        }else if(data.success && data.products && Array.isArray(data.products)){
           list = data.products;
         }
+
         productData = list;
         renderProductCards();
       }catch(err){
-        console.error("load err",err);
         showTip("globalTip", "Failed to load product list", true);
+        console.error(err);
       }
     }
 
@@ -223,13 +213,13 @@
         const groupText = formatNum(item.group);
         const sellText = formatNum(item.sell);
         html += `
-          <div class="bg-white rounded-xl shadow p-3 border border-gray-200 hover:shadow-md transition">
-            <div class="text-xl font-bold text-gray-900 mb-2">${item.id || "-"}</div>
-            <div class="border-b border-gray-300 mb-3"></div>
-            <div class="font-semibold text-gray-800 mb-2">${item.desc || "-"}</div>
-            <div class="text-sm text-gray-600 mb-1">Size: ${item.size || "-"}</div>
-            <div class="text-sm text-gray-600 mb-1">Group: ${groupText}</div>
-            <div class="text-sm text-gray-600">Sell: ${sellText}</div>
+          <div class="bg-zinc-800 rounded-xl shadow p-3 border border-zinc-700 hover:shadow-md transition">
+            <div class="text-xl font-bold text-white mb-2">${item.id || "-"}</div>
+            <div class="border-b border-zinc-600 mb-3"></div>
+            <div class="font-semibold text-gray-200 mb-2">${item.desc || "-"}</div>
+            <div class="text-sm text-gray-400 mb-1">Size: ${item.size || "-"}</div>
+            <div class="text-sm text-gray-400 mb-1">Group: ${groupText}</div>
+            <div class="text-sm text-gray-400">Sell: ${sellText}</div>
           </div>
         `
       })
